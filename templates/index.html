@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceChat — EN · ES · FR · ZH</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <header>
+    <div class="logo">VoiceChat</div>
+    <div class="tagline">Multilingual AI · Voice In · Voice Out</div>
+    <div class="lang-badges" id="lang-badges">
+      <!-- Populated dynamically from /languages endpoint -->
+    </div>
+  </header>
+
+  <div id="app">
+
+    <div id="chat-window">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">🎙️</div>
+        <p id="empty-hint">Loading languages…</p>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div id="transcript-box">Tap the mic to start speaking…</div>
+      <div class="btn-row">
+        <button class="mic-btn" id="mic-btn" title="Click to speak">🎤</button>
+        <div class="text-input-wrap">
+          <textarea id="text-input" placeholder="Or type here… (Enter to send)"></textarea>
+          <button class="send-btn" id="send-btn" title="Send">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="status-bar">ready</div>
+
+    <div class="settings-row">
+      <label>
+        🌐 Input language
+        <select id="input-lang-select">
+          <option value="auto" selected>Auto detect</option>
+        </select>
+      </label>
+      <label>
+        🔊 Voice speed
+        <select id="speed-select">
+          <option value="0.8">Slow</option>
+          <option value="1" selected>Normal</option>
+          <option value="1.25">Fast</option>
+        </select>
+      </label>
+      <label>
+        🗣️ Auto-speak replies
+        <select id="autospeak-select">
+          <option value="yes" selected>Yes</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+    </div>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/speech.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+</body>
+</html>

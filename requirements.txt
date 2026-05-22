@@ -1,0 +1,15 @@
+# Web framework
+flask==3.1.0
+
+# Anthropic Claude API client
+anthropic==0.49.0
+
+# Load environment variables from .env
+python-dotenv==1.1.0
+
+# Use the OS certificate store (required on corporate networks with SSL inspection)
+truststore>=0.10.4
+
+# HTML scraping for IRAS website content
+requests>=2.31.0
+beautifulsoup4>=4.12.2
