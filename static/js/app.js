@@ -76,6 +76,9 @@ function startListening() {
   }
 
   Speech.startRecognition({
+    lang: selectedInputLang !== 'auto' && languages[selectedInputLang]
+      ? languages[selectedInputLang].bcp47
+      : '',
     onStart: () => {
       UI.setMicRecording(true);
       UI.setTranscript('🔴 Listening — speak now…', 'listening');
@@ -112,11 +115,14 @@ function sendTextMessage() {
 async function handleUserMessage(text) {
   if (!text.trim()) return;
 
+  selectedInputLang = UI.getTextInputLang();
+  const effectiveInputLang = selectedInputLang !== 'auto' && languages[selectedInputLang]
+    ? selectedInputLang
+    : guessLangCodeFromText(text);
+
   // Add user message to history and show bubble
   conversationHistory.push({ role: 'user', content: text });
-  const userLangInfo = selectedInputLang !== 'auto'
-    ? languages[selectedInputLang] || fallbackLang()
-    : guessLangInfoFromText(text);
+  const userLangInfo = languages[effectiveInputLang] || guessLangInfoFromText(text);
   const userBubbleEl = UI.addBubble('user', text, userLangInfo);
 
   UI.setInputsDisabled(true);
@@ -127,7 +133,7 @@ async function handleUserMessage(text) {
     const res = await fetch('/chat', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ messages: conversationHistory, inputLang: selectedInputLang }),
+      body:    JSON.stringify({ messages: conversationHistory, inputLang: effectiveInputLang }),
     });
 
     if (!res.ok) {
@@ -199,24 +205,29 @@ function handlePlayButton(text, langInfo, playBtn) {
 
 // ── Utility: best-guess lang info before server responds ───────────────────
 // Used only for showing the user bubble immediately (before /chat returns).
+function guessLangCodeFromText(text) {
+  if (/[一-鿿㐀-䶿豈-﫿]/.test(text))
+    return 'zh';
+
+  if (/[àâæçéèêëîïôœùûüÿ]/i.test(text) ||
+      /\b(je|tu|il|elle|nous|vous|ils|elles|est|sont|avec|pour|dans|que|qui|pas|sur|une|les|des|mon|ton|son|bonjour|merci|oui|non|bonsoir|salut|comment|va)\b/i.test(text))
+    return 'fr';
+
+  if (/[áéíóúüñ¿¡]/i.test(text) ||
+      /\b(yo|ella|nosotros|ellos|con|para|hola|gracias|buenos|dias|buenas|estas|tengo|quiero)\b/i.test(text))
+    return 'es';
+
+  return 'en';
+}
+
 function guessLangInfoFromText(text) {
   // Mirrors server-side detection: special chars first, then common words.
   if (selectedInputLang !== 'auto' && languages[selectedInputLang]) {
     return languages[selectedInputLang];
   }
 
-  if (/[一-鿿㐀-䶿豈-﫿]/.test(text))
-    return languages['zh'] || fallbackLang();
-
-  if (/[àâæçéèêëîïôœùûüÿ]/i.test(text) ||
-      /\b(je|tu|il|elle|nous|vous|ils|elles|est|sont|avec|pour|dans|que|qui|pas|sur|une|les|des|mon|ton|son|bonjour|merci|oui|non|bonsoir|salut|comment|va)\b/i.test(text))
-    return languages['fr'] || fallbackLang();
-
-  if (/[áéíóúüñ¿¡]/i.test(text) ||
-      /\b(yo|ella|nosotros|ellos|con|para|hola|gracias|buenos|dias|buenas|estas|tengo|quiero)\b/i.test(text))
-    return languages['es'] || fallbackLang();
-
-  return languages['en'] || fallbackLang();
+  const code = guessLangCodeFromText(text);
+  return languages[code] || fallbackLang();
 }
 
 function fallbackLang() {

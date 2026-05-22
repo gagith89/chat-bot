@@ -247,10 +247,14 @@ def chat():
         iras_source_text, iras_source_urls = get_iras_evidence(last_user_msg)
 
     effective_system_prompt = SYSTEM_PROMPT
-    if input_lang != "auto":
-        selected_lang = LANGUAGES[input_lang]
+    detected_lang = input_lang
+    if input_lang == "auto" and last_user_msg:
+        detected_lang = detect_language(last_user_msg)
+
+    if detected_lang != "auto":
+        selected_lang = LANGUAGES[detected_lang]
         effective_system_prompt += (
-            f"\n\nThe user has chosen {selected_lang['name']} as the input language. "
+            f"\n\nThe user message appears to be in {selected_lang['name']}. "
             f"Always reply in {selected_lang['name']} in the same language as the user."
         )
 

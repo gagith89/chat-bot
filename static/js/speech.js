@@ -32,7 +32,7 @@ const Speech = (() => {
    * Start recording from the microphone.
    * @param {Object} callbacks — onStart, onInterim, onFinal, onError, onEnd
    */
-  function startRecognition({ onStart, onInterim, onFinal, onError, onEnd } = {}) {
+  function startRecognition({ onStart, onInterim, onFinal, onError, onEnd, lang } = {}) {
     if (!isSTTSupported()) {
       onError?.('Voice input not supported. Please use Chrome or Edge.');
       return;
@@ -42,7 +42,9 @@ const Speech = (() => {
     recognition = new SR();
     recognition.continuous     = false;
     recognition.interimResults = true;
-    recognition.lang           = '';   // empty = browser auto-detects
+    recognition.lang           = lang || '';   // empty = browser auto-detects
+
+    recognition.lang           = lang || '';
 
     recognition.onstart = () => {
       isRecording = true;
