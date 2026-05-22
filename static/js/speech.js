@@ -22,6 +22,43 @@ const Speech = (() => {
     });
   }
 
+  function selectBestVoice(voices, langInfo) {
+    const prefix  = langInfo.voicePrefix.toLowerCase();
+    const bcp47lc = langInfo.bcp47.toLowerCase();
+
+    const matches = voices
+      .map(v => ({
+        voice: v,
+        lang: v.lang.toLowerCase(),
+        name: v.name.toLowerCase(),
+      }))
+      .filter(({ lang }) => lang === bcp47lc || lang.startsWith(prefix));
+
+    if (!matches.length) {
+      return null;
+    }
+
+    const preferredTerms = [
+      'google', 'microsoft', 'premium', 'narrator', 'alloy',
+      'nora', 'samantha', 'daniel', 'emma', 'joanna', 'amy', 'zira',
+      'felix', 'olivia', 'matthew', 'salli', 'alloy', 'jonathan', 'kendra',
+    ];
+
+    return matches
+      .map(({ voice, lang, name }) => {
+        let score = 0;
+        if (lang === bcp47lc) score += 20;
+        if (voice.default) score += 5;
+        if (lang.startsWith(prefix) && lang !== bcp47lc) score += 5;
+        if (langInfo.voicePrefix === 'en' && name.includes('english')) score += 4;
+        preferredTerms.forEach(term => {
+          if (name.includes(term)) score += 3;
+        });
+        return { voice, score };
+      })
+      .sort((a, b) => b.score - a.score)[0].voice;
+  }
+
   // ── Getters ────────────────────────────────────────────────────────────
   const getIsRecording = () => isRecording;
   const getIsSpeaking  = () => isSpeaking;
@@ -100,14 +137,7 @@ const Speech = (() => {
 
     const voices = await getVoices();
 
-    // Match on voicePrefix first; also accept exact bcp47 match as a fallback.
-    const prefix  = langInfo.voicePrefix.toLowerCase();
-    const bcp47lc = langInfo.bcp47.toLowerCase();
-    const matched = voices.find(v => {
-      const lang = v.lang.toLowerCase();
-      return lang.startsWith(prefix) || lang === bcp47lc;
-    });
-
+    const matched = selectBestVoice(voices, langInfo);
     if (!matched) {
       onNoVoice?.(`No ${langInfo.name} (${langInfo.bcp47}) voice found. Install one via your OS settings.`);
       onEnd?.();
@@ -115,11 +145,14 @@ const Speech = (() => {
     }
 
     const utter  = new SpeechSynthesisUtterance(text);
-    utter.rate   = rate;
+    const defaultRate = langInfo.voicePrefix === 'en' ? 0.85 : 0.95;
+    utter.rate   = Math.max(0.75, Math.min(rate || defaultRate, 1.0));
+    utter.pitch  = 1.05;
+    utter.volume = 1;
     utter.lang   = langInfo.bcp47;
     utter.voice  = matched;
 
-    utter.onstart = () => { isSpeaking = true;  onStart?.(); };
+    utter.onstart = () => { isSpeaking = true; onStart?.(); };
 
     const done = () => { isSpeaking = false; onEnd?.(); };
     utter.onend   = done;
